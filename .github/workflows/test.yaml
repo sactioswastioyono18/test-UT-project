@@ -1,0 +1,51 @@
+name: Build-Test
+
+on:
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  build-test:
+    runs-on: ktbs-infra-k8s-runner
+
+    steps:
+      - name: Checking out repository
+        uses: actions/checkout@v2
+
+      - name: Configure Git for private modules
+        env:
+          USER: ${{ secrets.GH_USER }}
+          TOKEN: ${{ secrets.GH_TOKEN }}
+        run: git config --global url."https://${USER}:${TOKEN}@github.com".insteadOf "https://github.com"
+
+      - name: Setup Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.x
+
+      - name: Cache Go modules
+        uses: actions/cache@v2
+        with:
+          path: ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+
+      - name: Build
+        run: go build -v .
+
+      - name: Run Unit tests
+        id: unit-test
+        run: |-
+          cp ./param/.env.sample ./param/.env
+          go test -covermode=atomic -coverprofile=coverage.out ./...
+          go install github.com/jandelgado/gcov2lcov@latest
+          mkdir coverage
+          gcov2lcov -infile=coverage.out -outfile=./coverage/lcov.info
+          echo "::set-output name=totalcoverage::$(go tool cover -func coverage-reports.out | grep total | awk '{print substr($3, 1, length($3)-1)}')"
+
+      - name: Coveralls
+        uses: coverallsapp/github-action@master
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
