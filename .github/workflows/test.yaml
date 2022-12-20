@@ -32,7 +32,6 @@ jobs:
       - name: Run Unit tests
         id: unit-test
         run: |-
-          cp ./param/.env.sample ./param/.env
           go test -covermode=atomic -coverprofile=coverage.out ./...
           go install github.com/jandelgado/gcov2lcov@latest
           mkdir coverage
