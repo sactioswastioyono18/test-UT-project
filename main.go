@@ -11,5 +11,4 @@ func main() {
 	fmt.Println(result)
 	result1 := substract.Substract(3, 2)
 	fmt.Println(result1)
-	fmt.Println(result1)
 }
