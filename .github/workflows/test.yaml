@@ -3,21 +3,15 @@ name: Build-Test
 on:
   pull_request:
     branches:
-      - master
+      - main
 
 jobs:
   build-test:
-    runs-on: ktbs-infra-k8s-runner
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checking out repository
         uses: actions/checkout@v2
-
-      - name: Configure Git for private modules
-        env:
-          USER: ${{ secrets.GH_USER }}
-          TOKEN: ${{ secrets.GH_TOKEN }}
-        run: git config --global url."https://${USER}:${TOKEN}@github.com".insteadOf "https://github.com"
 
       - name: Setup Go
         uses: actions/setup-go@v2
@@ -38,7 +32,6 @@ jobs:
       - name: Run Unit tests
         id: unit-test
         run: |-
-          cp ./param/.env.sample ./param/.env
           go test -covermode=atomic -coverprofile=coverage.out ./...
           go install github.com/jandelgado/gcov2lcov@latest
           mkdir coverage
